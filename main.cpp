@@ -1,33 +1,33 @@
-#include <nvml.h>
-#include <iostream>
+#include "helper_nvml.h"
+#include <thread>
+#include <chrono>
 
 int main() {
 	// Initialize NVML
-	nvmlReturn_t result = nvmlInit();
-	if (result != NVML_SUCCESS) {
-		std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
-		return 1;
-	}
+	checkNVMLErrors(nvmlInit());
 
 	// Get the handle for the first GPU device
 	nvmlDevice_t device;
-	result = nvmlDeviceGetHandleByIndex(0, &device);
-	if (result != NVML_SUCCESS) {
-		std::cerr << "Failed to get handle for device 0: " << nvmlErrorString(result) << std::endl;
-		nvmlShutdown();
-		return 1;
-	}
+	checkNVMLErrors(nvmlDeviceGetHandleByIndex(0, &device));
 
-	// Get the temperature of the GPU
-	unsigned int temp;
-	result = nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp);
-	if (result != NVML_SUCCESS) {
-		std::cerr << "Failed to get temperature for device 0: " << nvmlErrorString(result) << std::endl;
-		nvmlShutdown();
-		return 1;
-	}
+	while (true) {
+		// Get the temperature of the GPU
+		unsigned int temp;
+		checkNVMLErrors(nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp));
+		std::cout << "GPU Temperature: " << temp << " C\n";
 
-	std::cout << "GPU Temperature: " << temp << " C\n";
+		// Get the core clock of the GPU
+		unsigned int clock;
+		checkNVMLErrors(nvmlDeviceGetClockInfo(device, NVML_CLOCK_GRAPHICS, &clock));
+		std::cout << "GPU Core Clock: " << clock << " MHz\n";
+
+		unsigned int gpu_power;
+		checkNVMLErrors(nvmlDeviceGetPowerUsage(device, &gpu_power));
+		std::cout << "GPU Power Usage: " << gpu_power / 1000 << " W\n";
+
+		// Need to add sleeping to prevent 100% CPU usage
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
 
 	// Shutdown NVML
 	nvmlShutdown();
