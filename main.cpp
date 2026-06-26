@@ -1,8 +1,12 @@
 #include "helper_nvml.h"
 #include <thread>
 #include <chrono>
+#include <cmath>
+#include <iomanip>
 
 int main() {
+	const double GB = 1024 * 1024 * 1024;
+
 	// Initialize NVML
 	checkNVMLErrors(nvmlInit());
 
@@ -24,6 +28,14 @@ int main() {
 		unsigned int gpu_power;
 		checkNVMLErrors(nvmlDeviceGetPowerUsage(device, &gpu_power));
 		std::cout << "GPU Power Usage: " << gpu_power / 1000 << " W\n";
+
+		nvmlUtilization_t gpu_util;
+		checkNVMLErrors(nvmlDeviceGetUtilizationRates(device, &gpu_util));
+		std::cout << "GPU Utilization: " << gpu_util.gpu << " %\n";
+
+		nvmlMemory_t gpu_memory;
+		checkNVMLErrors(nvmlDeviceGetMemoryInfo(device, &gpu_memory));
+		std::cout << std::fixed << std::setprecision(2) << "GPU Memoryu Usage: " << gpu_memory.used/GB << "/" << gpu_memory.total/GB << " GB\n";
 
 		// Need to add sleeping to prevent 100% CPU usage
 		std::this_thread::sleep_for(std::chrono::seconds(1));
