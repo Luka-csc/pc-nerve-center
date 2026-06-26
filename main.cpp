@@ -3,6 +3,9 @@
 #include <chrono>
 #include <cmath>
 #include <iomanip>
+#include "third_party/nlohmannParser/json.hpp"
+
+using json = nlohmann::json;
 
 int main() {
 	const double GB = 1024 * 1024 * 1024;
@@ -27,7 +30,7 @@ int main() {
 
 		unsigned int gpu_power;
 		checkNVMLErrors(nvmlDeviceGetPowerUsage(device, &gpu_power));
-		std::cout << "GPU Power Usage: " << gpu_power / 1000 << " W\n";
+		std::cout << std::fixed << std::setprecision(2) << "GPU Power Usage: " << gpu_power / 1000.0 << " W\n";
 
 		nvmlUtilization_t gpu_util;
 		checkNVMLErrors(nvmlDeviceGetUtilizationRates(device, &gpu_util));
@@ -36,6 +39,17 @@ int main() {
 		nvmlMemory_t gpu_memory;
 		checkNVMLErrors(nvmlDeviceGetMemoryInfo(device, &gpu_memory));
 		std::cout << std::fixed << std::setprecision(2) << "GPU Memoryu Usage: " << gpu_memory.used/GB << "/" << gpu_memory.total/GB << " GB\n";
+
+		// json section
+		json data;
+		data["gpu_temp"] = temp;
+		data["gpu_clock"] = clock;
+		data["gpu_power"] = gpu_power / 1000.0;
+		data["gpu_util"] = gpu_util.gpu;
+		data["gpu_memory_used"] = gpu_memory.used / GB;
+		data["gpu_memory_total"] = gpu_memory.total / GB;
+
+		std::cout << data.dump() << "\n";
 
 		// Need to add sleeping to prevent 100% CPU usage
 		std::this_thread::sleep_for(std::chrono::seconds(1));
